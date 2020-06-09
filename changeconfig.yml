@@ -1,0 +1,35 @@
+---
+
+- name: Change device configs
+  connection: netconf
+  gather_facts: false
+  hosts: all
+  vars_prompt:
+
+    - name: configtochange
+      prompt: "Config to change on device?"
+      private: no
+
+    - name: commitcomment
+      prompt: "Comment for commit?"
+      private: no
+
+  tasks:
+
+
+    - name: Change config and do commit confirmed 5
+      junos_config:
+        comment: "{{ commitcomment }}"
+        lines:
+          - "{{ configtochange }}"
+        confirm: 5
+      when: ansible_network_os == 'junos'
+
+    - name: Wait for ten seconds to confirm we haven't lost connectivity before continuing
+      wait_for:
+        timeout: 10
+
+    - name: Commit config now we know we still have access
+      junos_config:
+        comment: "{{ commitcomment }}"
+        confirm_commit: yes
