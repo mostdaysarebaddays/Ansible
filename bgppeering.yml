@@ -1,0 +1,92 @@
+---
+
+- name: Change device configs
+  connection: netconf
+  gather_facts: false
+  hosts: edgerouters
+  vars_prompt:
+
+    - name: bgppeername
+      prompt: "BGP peer name?"
+      private: no
+
+    - name: bgppeerip
+      prompt: "BGP peer IP?"
+      private: no
+
+    - name: bgppeeras
+      prompt: "BGP peer AS?"
+      private: no
+
+    - name: bgppeermaxprefix
+      prompt: "BGP peer prefix-limit?"
+      private: no
+
+    - name: "location"
+      prompt: "Where is the peering location?\n1- {{ bgppeerlocation1 }}\n2- {{ bgppeerlocation2 }}\n3- {{ bgppeerlocation3 }}\n4- {{ bgppeerlocation4 }}\n"
+      private: no
+
+    - name: commitcomment
+      prompt: "Comment for commit?"
+      private: no
+
+  vars_files:
+    - /etc/ansible/vars/bgppeering.yml
+
+  tasks:
+
+
+    - name: Create config for {{ bgppeerlocation1 }} peering
+      junos_config:
+         comment: "{{ commitcomment }}"
+         lines:
+           - set protocols bgp group {{ bgppeerlocationdescription1 }} neighbor {{ bgppeerip}} description {{ bgppeername }}
+           - set protocols bgp group {{ bgppeerlocationdescription1 }} neighbor {{ bgppeerip}} family inet any prefix-limit maximum {{ bgppeermaxprefix }}
+           - set protocols bgp group {{ bgppeerlocationdescription1 }} neighbor {{ bgppeerip}} peer-as {{ bgppeeras }}
+         confirm: 5
+         check_commit: yes
+      when: ( location == "1" ) and ( bgplocationdevicename1 in inventory_hostname )
+
+    - name: Create config for {{ bgppeerlocation2 }} peering
+      junos_config:
+         comment: "{{ commitcomment }}"
+         lines:
+           - set protocols bgp group {{ bgppeerlocationdescription2 }} neighbor {{ bgppeerip}} description {{ bgppeername }}
+           - set protocols bgp group {{ bgppeerlocationdescription2 }} neighbor {{ bgppeerip}} family inet any prefix-limit maximum {{ bgppeermaxprefix }}
+           - set protocols bgp group {{ bgppeerlocationdescription2 }} neighbor {{ bgppeerip}} peer-as {{ bgppeeras }}
+         confirm: 5
+         check_commit: yes
+      when: ( location == "2" ) and ( bgplocationdevicename2 in inventory_hostname )
+
+    - name: Create config for {{ bgppeerlocation3 }} peering
+      junos_config:
+         comment: "{{ commitcomment }}"
+         lines:
+           - set protocols bgp group {{ bgppeerlocationdescription3 }} neighbor {{ bgppeerip}} description {{ bgppeername }}
+           - set protocols bgp group {{ bgppeerlocationdescription3 }} neighbor {{ bgppeerip}} family inet any prefix-limit maximum {{ bgppeermaxprefix }}
+           - set protocols bgp group {{ bgppeerlocationdescription3 }} neighbor {{ bgppeerip}} peer-as {{ bgppeeras }}
+         confirm: 5
+         check_commit: yes
+      when: ( location == "3" ) and ( bgplocationdevicename3  in inventory_hostname )
+
+
+    - name: Create config for {{ bgppeerlocation4 }} peering
+      junos_config:
+         comment: "{{ commitcomment }}"
+         lines:
+           - set protocols bgp group {{ bgppeerlocationdescription4 }} neighbor {{ bgppeerip}} description {{ bgppeername }}
+           - set protocols bgp group {{ bgppeerlocationdescription4 }} neighbor {{ bgppeerip}} family inet any prefix-limit maximum {{ bgppeermaxprefix }}
+           - set protocols bgp group {{ bgppeerlocationdescription4 }} neighbor {{ bgppeerip}} peer-as {{ bgppeeras }}
+         confirm: 5
+         check_commit: yes
+      when: ( location == "4" ) and ( bgplocationdevicename4 in inventory_hostname )
+
+    - name: Log into device and check is new peer is up
+      junos_command:
+        commands: show bpg summary | grep {{ bgppeeras }}
+      register: junos_result
+      when: ansible_network_os == 'junos'
+
+    - name: Check if new peer is up
+      debug: 
+        var: junos_result.stdout_lines
